@@ -11,7 +11,7 @@ decision.values <- function (x, chosen.arms) {
   for (i in 1:length(x)){
     n <- sum(chosen.arms == i)
     t <- length(chosen.arms) - 1
-    values[i] <- x[i] + na.zero(suppressWarnings(x[i] + sqrt(2 * log(t) / n)))
+    values[i] <- x[i] + na.zero(suppressWarnings(sqrt(2 * log(t) / n)))
   }
   values
 }
@@ -43,5 +43,6 @@ ucb1 <- function(k.arms, reward.probs, t.step, epsilon) {
 if (getOption('run.main', default=TRUE)) {
   ε <- 0.1
   k <- 2
-  print(ucb1(k, c(rep(0.5-ε,k-1),0.5), 100))
+  # print(ucb1(k, c(rep(0.5-ε,k-1),0.5), 100))
+  print(ucb1(k, c(0.4,0.5), 25))
 }
