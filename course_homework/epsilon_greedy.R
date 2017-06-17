@@ -10,15 +10,14 @@ epsilon.greedy <- function(k.arms, reward.probs, t.step, epsilon) {
                         cum.regret=c(0),
                         reward=c(0),
                         chosen.arm=c(0))
-  status <- list(expected.reward=rep(0.5, k.arms))
+  status <- list(expected.reward=rep(0, k.arms))
   for (i in 1:t.step) {
     if (runif(1, 0, 1) > epsilon) {
       choice <- sample(1:k.arms,1) 
     } else {
       choice <- which.max(status$expected.reward)
     }
-    reward <- runif(1, 0, 1) < reward.probs[choice]
-    print(reward)
+    reward <- rbinom(1, 1, reward.probs[choice])
     regret <- as.numeric(reward)
     cum.regret <- regret + results[i,'cum.regret']
     status$expected.reward[choice] <- na.zero(
@@ -36,6 +35,6 @@ epsilon.greedy <- function(k.arms, reward.probs, t.step, epsilon) {
 
 if (getOption('run.main', default=TRUE)) {
   ε <- 0.1
-  k <- 10
-  print(epsilon.greedy(k, c(rep(0.5-ε,k-1),0.5), 10, epsilon=0.1))
+  k <- 2
+  print(epsilon.greedy(k, c(rep(0.5-ε,k-1),0.5), 100, epsilon=0.1))
 }
