@@ -81,9 +81,6 @@ class BayesianOptimizer(object):
         Receives a sample and returns the upper confidence value
         for that point in the parameter/feature space
         """
-        targets = np.array(self.observations)[:, -1]
-        adapter = np.max(targets) - np.mean(targets)\
-            / np.max(targets)
-        k = self.acquisition_params['k'] * (1 / (self.i + 1)) * adapter
+        k = self.acquisition_params['k']
         mean, std = self.model.predict(x.reshape(1, -1), return_std=True)
         return -(mean + k * std)
