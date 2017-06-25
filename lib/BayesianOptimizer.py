@@ -1,5 +1,4 @@
 import numpy as np
-# from scipy.optimize import minimize
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import Matern
 
@@ -9,7 +8,8 @@ class BayesianOptimizer(object):
     def __init__(self, feature_meta=None,
                  feature_samples=None,
                  init_observations=[],
-                 kernel=Matern(nu=.5)):
+                 kernel=Matern(nu=.5),
+                 acquisition_params=None):
         """
         BayesianOptimizerSuperClass
         Keyword arguments:
@@ -48,17 +48,21 @@ class BayesianOptimizer(object):
         self.i = 0
         self.kernel = kernel
         self.model = GaussianProcessRegressor(kernel=self.kernel)
-        self.acquisition_params = {
-            'type': 'upper_confidence_bound',
-            'u': 2.5   # TODO: this is an arbitrary value
-        }
+        self.acquisition_params = acquisition_params
+        if self.acquisition_params is None:
+            self.acquisition_params = {
+                'type': 'upper_confidence_bound',
+                'k': .5   # TODO: this is an arbitrary value
+            }
+
         self.acquisition = self._upper_confidence_bound
 
     def update(self, features, target):
         """
         Receives a feature vector and a target values
         and refits the gaussian process estimation for
-        the parameter landscape. Returns the optimizer(self)
+        the parameter landscape. Returns the optimizer(self).
+        The target values are maximised!
         """
         self.i += 1
         self.observations.append(features + [target])
@@ -73,6 +77,13 @@ class BayesianOptimizer(object):
         return self.suggest()
 
     def _upper_confidence_bound(self, x):
-        u = self.acquisition_params['u']
+        """
+        Receives a sample and returns the upper confidence value
+        for that point in the parameter/feature space
+        """
+        targets = np.array(self.observations)[:, -1]
+        adapter = np.max(targets) - np.mean(targets)\
+            / np.max(targets)
+        k = self.acquisition_params['k'] * (1 / (self.i + 1)) * adapter
         mean, std = self.model.predict(x.reshape(1, -1), return_std=True)
-        return -(mean + u * std)
+        return -(mean + k * std)

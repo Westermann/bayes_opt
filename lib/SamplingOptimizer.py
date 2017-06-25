@@ -1,6 +1,5 @@
 import numpy as np
 from .BayesianOptimizer import BayesianOptimizer
-from scipy.optimize import minimize
 
 
 class SamplingOptimizer(BayesianOptimizer):
@@ -33,20 +32,18 @@ class SamplingOptimizer(BayesianOptimizer):
                 dict (if `True`) or as a vector (default)
 
         """
-        samples = self.\
-            feature_samples[
-                np.random.randint(
-                    self.feature_samples.shape[0],
-                    size=100), :]
+        samples = self.feature_samples[
+            np.random.choice(self.feature_samples.shape[0],
+                             min(1000, self.feature_samples.shape[0]),
+                             replace=False)]
         optimum_val = -np.inf
         for sample in samples:
-            opt_res = minimize(
-                fun=self.acquisition,
-                x0=sample)
-            iter_optimum_val = np.min(-opt_res.fun)
-            if iter_optimum_val >= optimum_val:
-                optimum_val = iter_optimum_val
-                optimum = opt_res.x
+            iter_val = self.acquisition(sample)
+            print(sample)
+            print(iter_val)
+            if iter_val >= optimum_val:
+                optimum_val = iter_val
+                optimum = sample
 
         if return_dict is True:
             return dict(zip(self.feature_names, optimum))

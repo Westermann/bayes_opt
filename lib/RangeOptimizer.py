@@ -40,7 +40,7 @@ class RangeOptimizer(BayesianOptimizer):
         samples = np.random.uniform(
             self.feature_bounds[:, 0],
             self.feature_bounds[:, 1],
-            size=(1000, self.feature_bounds.shape[0]))
+            size=(20, self.feature_bounds.shape[0]))
         optimum_val = -np.inf
         for sample in samples:
             opt_res = minimize(
