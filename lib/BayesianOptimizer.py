@@ -1,4 +1,5 @@
 import numpy as np
+from .LandscapeModel import LandscapeModel
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import Matern
 
@@ -8,7 +9,10 @@ class BayesianOptimizer(object):
     def __init__(self, feature_meta=None,
                  feature_samples=None,
                  init_observations=[],
-                 kernel=Matern(nu=.5),
+                 landscape=LandscapeModel(
+                     GaussianProcessRegressor,
+                     Matern,
+                     kernel_args={'nu': .5}),
                  acquisition_params=None):
         """
         BayesianOptimizerSuperClass
@@ -25,9 +29,8 @@ class BayesianOptimizer(object):
                 List of tuples of observation vectors with length
                 `number_of_features + 1` where the last column is the
                 target value
-            kernel:
-                A kernel function from sklearn.gaussian_process.kernel
-                or equivalent. Default is `Matern(nu=.5)`
+            landscape:
+                TODO
         """
 
         if feature_meta is None and feature_samples is None:
@@ -44,11 +47,10 @@ class BayesianOptimizer(object):
             self.feature_samples = feature_samples
             self.features_dim = len(feature_samples[0])
 
-        self.observations = init_observations
+        self.observations = np.array(init_observations)
         self.i = 0
         self.best_achieved = []
-        self.kernel = kernel
-        self.model = GaussianProcessRegressor(kernel=self.kernel)
+        self.landscape = landscape
         self.acquisition_params = acquisition_params
         if self.acquisition_params is None:
             self.acquisition_params = {
@@ -66,16 +68,15 @@ class BayesianOptimizer(object):
         The target values are maximised!
         """
         self.i += 1
-        self.observations.append(features + [target])
+        self.observations = np.append(self.observations,
+                                      [features + [target]],
+                                      axis=0)
         try:
             self.best_achieved.append(np.max([target, self.best_achieved[-1]]))
         except IndexError:
             self.best_achieved.append(target)
 
-        data = np.array(self.observations)
-        X = data[:, :-1]
-        y = data[:, -1:]
-        self.model.fit(X, y)
+        self.landscape.fit(self.observations)
         return self
 
     def step(self, features, target):
@@ -88,5 +89,5 @@ class BayesianOptimizer(object):
         for that point in the parameter/feature space
         """
         k = self.acquisition_params['k']
-        mean, std = self.model.predict(x.reshape(1, -1), return_std=True)
+        mean, std = self.landscape.predict(self.observations, :x)
         return -(mean + k * std)
