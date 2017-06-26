@@ -46,6 +46,7 @@ class BayesianOptimizer(object):
 
         self.observations = init_observations
         self.i = 0
+        self.best_achieved = []
         self.kernel = kernel
         self.model = GaussianProcessRegressor(kernel=self.kernel)
         self.acquisition_params = acquisition_params
@@ -66,6 +67,11 @@ class BayesianOptimizer(object):
         """
         self.i += 1
         self.observations.append(features + [target])
+        try:
+            self.best_achieved.append(np.max([target, self.best_achieved[-1]]))
+        except IndexError:
+            self.best_achieved.append(target)
+
         data = np.array(self.observations)
         X = data[:, :-1]
         y = data[:, -1:]
