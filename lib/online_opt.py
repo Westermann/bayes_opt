@@ -35,4 +35,12 @@ class OnlineOptimizer(object):
 
         return features, target
 
+    def get_best_features(self):
+        observations = np.array(self.observations)
+        best_features = observations[np.argmax(observations[:, -1]), :-1]
+        try:
+            best_features = dict(zip(self.feature_names, best_features))
+        except TypeError:
+            pass
 
+        return best_features
