@@ -49,7 +49,7 @@ class BayesianOptimizer(OnlineOptimizer):
         """
         Receives a feature vector and a target values
         and refits the gaussian process estimation for
-        the parameter landscape. Returns the optimizer(self).
+        the parameter surrogate. Returns the optimizer(self).
         The target values are maximised!
         """
         features, target = super().update_meta(features, target)
@@ -146,7 +146,7 @@ class RangeOptimizer(BayesianOptimizer):
     def suggest(self, return_dict=False):
         """
         Optimizes the acquisition function over the
-        currently estimated parameter landscape and
+        currently estimated parameter surrogate and
         returns the optimum value from the feature
         space.
         Keyword arguements:

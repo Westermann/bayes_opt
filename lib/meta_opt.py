@@ -52,7 +52,7 @@ class MetaOptimizer(OnlineOptimizer):
         """
         Receives a feature vector and a target value
         and refits all experts' gaussian process estimations
-        for the parameter landscape. Returns the optimizer(self).
+        for the parameter surrogate. Returns the optimizer(self).
         The target values are maximised!
         """
         features, target = super().update_meta(features, target)
@@ -62,7 +62,7 @@ class MetaOptimizer(OnlineOptimizer):
     def suggest(self, return_dict=False):
         """
         Optimizes the acquisition function over the
-        currently estimated parameter landscape  of all
+        currently estimated parameter surrogate  of all
         experts and returns the optimum value from the feature
         space for the expect that achieves the highest
         'trustworhiness'.
