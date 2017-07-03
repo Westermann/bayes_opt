@@ -2,6 +2,7 @@ import numpy as np
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import Matern
 from scipy.optimize import minimize
+from exceptions import FeatureConfigurationMissingError
 
 
 class BayesianOptimizer(object):
@@ -32,8 +33,7 @@ class BayesianOptimizer(object):
         """
 
         if feature_meta is None and feature_samples is None:
-            raise Exception('Please provide at least one of ' +
-                            '`feature_meta` or `feature_samples`')
+            raise FeatureConfigurationMissingError()
 
         if feature_meta is not None:
             self.feature_names = feature_meta.keys()
