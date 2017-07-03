@@ -2,10 +2,10 @@ import numpy as np
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import Matern
 from scipy.optimize import minimize
-from exceptions import FeatureConfigurationMissingError
+from .online_opt import OnlineOptimizer
 
 
-class BayesianOptimizer(object):
+class BayesianOptimizer(OnlineOptimizer):
 
     def __init__(self, feature_meta=None,
                  feature_samples=None,
@@ -31,30 +31,16 @@ class BayesianOptimizer(object):
                 A kernel function from sklearn.gaussian_process.kernel
                 or equivalent. Default is `Matern(nu=.5)`
         """
-
-        if feature_meta is None and feature_samples is None:
-            raise FeatureConfigurationMissingError()
-
-        if feature_meta is not None:
-            self.feature_names = feature_meta.keys()
-            self.feature_bounds = np.stack(feature_meta.values())
-            self.feature_types = [type(f[0]) for f in feature_meta.values()]
-            self.features_dim = len(self.feature_names)
-
-        if feature_samples is not None:
-            self.feature_samples = feature_samples
-            self.features_dim = len(feature_samples[0])
-
+        super().__init__(feature_meta=feature_meta,
+                         feature_samples=feature_samples)
         self.observations = init_observations
-        self.i = 0
-        self.best_achieved = []
         self.kernel = kernel
         self.model = GaussianProcessRegressor(kernel=self.kernel)
         self.acquisition_params = acquisition_params
         if self.acquisition_params is None:
             self.acquisition_params = {
                 'type': 'upper_confidence_bound',
-                'k': .5   # TODO: this is an arbitrary value
+                'k': 3.89   # Gaussian .9999 confidence z-value
             }
 
         self.acquisition = self._upper_confidence_bound
@@ -66,13 +52,7 @@ class BayesianOptimizer(object):
         the parameter landscape. Returns the optimizer(self).
         The target values are maximised!
         """
-        self.i += 1
-        self.observations.append(features + [target])
-        try:
-            self.best_achieved.append(np.max([target, self.best_achieved[-1]]))
-        except IndexError:
-            self.best_achieved.append(target)
-
+        features, target = super().update_meta(features, target)
         data = np.array(self.observations)
         X = data[:, :-1]
         y = data[:, -1:]
