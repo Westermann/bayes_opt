@@ -2,7 +2,6 @@ import numpy as np
 import scipy.stats as ss
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import Matern
-from scipy.optimize import minimize
 from .online_opt import OnlineOptimizer
 
 
@@ -12,7 +11,8 @@ class BayesianOptimizer(OnlineOptimizer):
                  feature_samples=None,
                  init_observations=[],
                  kernel=Matern(nu=.5),
-                 acquisition_params=None):
+                 acquisition_params=None,
+                 granularity=100):
         """
         BayesianOptimizerSuperClass
         Keyword arguments:
@@ -36,6 +36,7 @@ class BayesianOptimizer(OnlineOptimizer):
                          feature_samples=feature_samples)
         self.observations = init_observations
         self.kernel = kernel
+        self.granularity = granularity
         self.model = GaussianProcessRegressor(kernel=self.kernel)
         self.acquisition_params = acquisition_params
         if self.acquisition_params is None:
@@ -77,6 +78,7 @@ class BayesianOptimizer(OnlineOptimizer):
         """
         Receives a sample and returns the expected improvement value
         for that point in the parameter/feature space
+        (probably not working atm)
         """
         if len(self.best_achieved) < 1:
             best = 0
@@ -92,6 +94,7 @@ class BayesianOptimizer(OnlineOptimizer):
         """
         Receives a sample and returns the upper confidence value
         for that point in the parameter/feature space
+        (probably not working atm)
         """
         k = self.acquisition_params['k']
         mean, std = self.model.predict(x.reshape(1, -1), return_std=True)
@@ -109,7 +112,6 @@ class SamplingOptimizer(BayesianOptimizer):
             **kw_args:
                 Keyword arguements for BayesianOptimizer
         """
-
         super().__init__(
             feature_samples=feature_samples,
             **kw_args
@@ -126,7 +128,6 @@ class SamplingOptimizer(BayesianOptimizer):
                 Boolean indicating wether to return the
                 optimum value as a { <feature_name>: <value> }
                 dict (if `True`) or as a vector (default)
-
         """
         samples = self.feature_samples[
             np.random.choice(self.feature_samples.shape[0],
@@ -162,7 +163,6 @@ class RangeOptimizer(BayesianOptimizer):
             **optimizer_args:
                 Keyword arguements for BayesianOptimizer
         """
-
         super().__init__(
             feature_meta=feature_meta,
             **optimizer_args
@@ -179,21 +179,17 @@ class RangeOptimizer(BayesianOptimizer):
                 Boolean indicating wether to return the
                 optimum value as a { <feature_name>: <value> }
                 dict (if `True`) or as a vector (default)
-
         """
         samples = np.random.uniform(
             self.feature_bounds[:, 0],
             self.feature_bounds[:, 1],
-            size=(20, self.feature_bounds.shape[0]))
+            size=(self.granularity, self.feature_bounds.shape[0]))
         optimum_val = -np.inf
         for sample in samples:
-            opt_res = minimize(
-                fun=self.acquisition,
-                x0=sample,
-                bounds=self.feature_bounds)
-            if min(-opt_res.fun) >= optimum_val:
-                optimum_val = min(-opt_res.fun)
-                optimum = opt_res.x
+            pred = self.acquisition(sample)
+            if -pred >= optimum_val:
+                optimum_val = -pred
+                optimum = sample
 
         optimum = np.maximum(optimum, self.feature_bounds[:, 0])
         optimum = np.minimum(optimum, self.feature_bounds[:, 1])
