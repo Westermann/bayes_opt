@@ -77,8 +77,10 @@ class MetaOptimizer(OnlineOptimizer):
                 e['opt'].model.log_marginal_likelihood_value_
                 for e in self.experts
             ]
-            x = self.experts[np.argmax(lls)]['opt'].suggest(return_dict=return_dict)
+            x = self.experts[np.argmax(lls)]['opt']\
+                .suggest(return_dict=return_dict)
         else:
-            x = np.random.choice(self.experts)['opt'].suggest(return_dict=return_dict)
+            x = np.random.choice(self.experts)['opt']\
+                .suggest(return_dict=return_dict)
 
         return x

@@ -1,4 +1,5 @@
 import numpy as np
+import scipy.stats as ss
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import Matern
 from scipy.optimize import minimize
@@ -43,7 +44,16 @@ class BayesianOptimizer(OnlineOptimizer):
                 'k': 3.89   # Gaussian .9999 confidence z-value
             }
 
-        self.acquisition = self._upper_confidence_bound
+        if self.acquisition_params['type'] in [
+            'upper_confidence_bound',
+            'ucb'
+        ]:
+            self.acquisition = self._upper_confidence_bound
+        elif self.acquisition_params['type'] in [
+            'expected_improvement',
+            'ei'
+        ]:
+            self.acquisition = self._expected_improvement
 
     def update(self, features, target):
         """
@@ -62,6 +72,21 @@ class BayesianOptimizer(OnlineOptimizer):
     def step(self, features, target):
         self.update(features, target)
         return self.suggest()
+
+    def _expected_improvement(self, x):
+        """
+        Receives a sample and returns the expected improvement value
+        for that point in the parameter/feature space
+        """
+        if len(self.best_achieved) < 1:
+            best = 0
+        else:
+            best = self.best_achieved[-1]
+
+        bias = 0.
+        mean, std = self.model.predict(x.reshape(1, -1), return_std=True)
+        z = (mean - best - bias)/std
+        return (mean - best - bias) * ss.norm.cdf(z) + std * ss.norm.pdf(z)
 
     def _upper_confidence_bound(self, x):
         """
