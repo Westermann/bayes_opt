@@ -1,5 +1,6 @@
 import numpy as np
-from sklearn.gaussian_process.kernels import RBF, Matern, RationalQuadratic
+from sklearn.gaussian_process.kernels import\
+    RBF, Matern, RationalQuadratic, ExpSineSquared
 from .online_opt import OnlineOptimizer
 from .bayes_opt import RangeOptimizer, SamplingOptimizer
 from .exceptions import FeatureConfigurationMissingError
@@ -29,11 +30,11 @@ class MetaOptimizer(OnlineOptimizer):
 
         self.experts = []
         for kernel in [
-            Matern(nu=1/2),
+            RBF(),
             Matern(nu=3/2),
             Matern(nu=5/2),
-            RBF(),
-            RationalQuadratic()
+            RationalQuadratic(),
+            ExpSineSquared()
         ]:
             opt = self.Optimizer(**{
                 **optimizer_features_arg,
