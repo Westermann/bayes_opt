@@ -1,28 +1,33 @@
 # MetaOpt
 
-Simple and easy-to-use implementation of the most recent ideas in Bayesian Optimization, targeted for use in hyperparameter tuning.
+Simple and easy-to-use implementation of the most recent ideas in _Bayesian optimization_, targeted for use in hyperparameter tuning.
 
 
 ## Usage
 
 ```
-# create a MetaOptimizer object
+# 1. create a MetaOptimizer object
+# with the bounds for your parameters
 mop = MetaOptimizer(feature_meta={
     'max_depth': (2, 25),
     'n_estimators': (5, 250),
     'eta': (.01, 2.)
 })
 
-# generate next parameters to be explored
+# 2. generate next parameters to be explored
 params = mop.suggest()
 # {'max_depth': 4, 'n_estimators': 52, 'eta': 0.1574}
 
+# 3. crossvalidate the model with the target parameters
+# and obtain a score (target value) for these
+# used to update the optimizer
 result = crossvalidation(params)
 # 0.87
-# refit the model with the target value for the suggested parameters
 mop.update(params, result)
 
-# shorthand for update and suggest
+# 4. Go back to 2.
+
+# shorthand for update and suggest (2. and 3.)
 params = mop.step(params, result)
 ```
 
