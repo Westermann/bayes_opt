@@ -1,5 +1,6 @@
 import numpy as np
 import scipy.stats as ss
+from scipy.optimization import minimize
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import Matern
 from .online_opt import OnlineOptimizer
@@ -186,10 +187,13 @@ class RangeOptimizer(BayesianOptimizer):
             size=(self.granularity, self.feature_bounds.shape[0]))
         optimum_val = -np.inf
         for sample in samples:
-            pred = self.acquisition(sample)
-            if -pred >= optimum_val:
-                optimum_val = -pred
-                optimum = sample
+            opt_res = minimize(
+                    fun=self.acquisition,
+                    x0=sample,
+                    bounds=self.feature_bounds)
+            if min(-opt_res.fun) >= optimum_val:
+                    optimum_val = min(-opt_res.fun)
+                    optimum = opt_res.x
 
         optimum = np.maximum(optimum, self.feature_bounds[:, 0])
         optimum = np.minimum(optimum, self.feature_bounds[:, 1])
